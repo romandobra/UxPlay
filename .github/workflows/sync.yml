@@ -1,0 +1,25 @@
+name: Sync Upstream Changes
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # Automatically runs every night at midnight UTC
+  workflow_dispatch:   # Allows you to manually trigger a sync from the UI
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      
+    steps:
+    - name: Checkout Fork
+      uses: actions/checkout@v4
+
+    - name: Sync with Upstream
+      uses: aormsby/Fork-Sync-With-Upstream-action@v3.4
+      with:
+        upstream_repository: antimof/UxPlay
+        upstream_branch: master
+        target_sync_branch: master
+        target_repo_token: ${{ secrets.GITHUB_TOKEN }}
+        test_mode: false
