@@ -17,6 +17,11 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    
+    # 💡 CRITICAL FIX: Grants GitHub Actions the explicit rights to create releases and push tags
+    permissions:
+      contents: write
+      
     container:
       image: debian:stable
 
@@ -48,6 +53,8 @@ jobs:
       run: |
         cd build
         make
+        # Check exactly where the file is created to prevent empty uploads
+        ls -la
 
     # Uploads if it's a real Git tag OR if triggered manually via UI
     - name: Upload Binary to Releases
@@ -55,7 +62,10 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
         files: build/uxplay
-        tag_name: ${{ github.ref_name || github.event.inputs.version }}
-        name: Release ${{ github.ref_name || github.event.inputs.version }}
+        # Dynamic fallback logic for tag mapping
+        tag_name: ${{ github.ref_type == 'tag' && github.ref_name || github.event.inputs.version }}
+        name: Release ${{ github.ref_type == 'tag' && github.ref_name || github.event.inputs.version }}
+        draft: false
+        prerelease: false
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
