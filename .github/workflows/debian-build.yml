@@ -3,22 +3,12 @@ name: Debian Compile and Release
 on:
   push:
     branches: [ "master", "main" ]
-    tags:
-      - 'v*'
-  pull_request:
-    branches: [ "master", "main" ]
   workflow_dispatch:
-    inputs:
-      version:
-        description: 'Release Version (e.g., v1.73.7)'
-        required: true
-        default: 'manual-build'
 
 jobs:
   build:
     runs-on: ubuntu-latest
     
-    # 💡 CRITICAL FIX: Grants GitHub Actions the explicit rights to create releases and push tags
     permissions:
       contents: write
       
@@ -53,19 +43,16 @@ jobs:
       run: |
         cd build
         make
-        # Check exactly where the file is created to prevent empty uploads
-        ls -la
 
-    # Uploads if it's a real Git tag OR if triggered manually via UI
+    # 💡 CHANGED: Removed the 'if' guard so it executes on every single push/manual run
     - name: Upload Binary to Releases
-      if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
       uses: softprops/action-gh-release@v2
       with:
         files: build/uxplay
-        # Dynamic fallback logic for tag mapping
-        tag_name: ${{ github.ref_type == 'tag' && github.ref_name || github.event.inputs.version }}
-        name: Release ${{ github.ref_type == 'tag' && github.ref_name || github.event.inputs.version }}
-        draft: false
-        prerelease: false
+        tag_name: latest
+        name: "Latest Dev Build"
+        body: "Automated compilation tracking the latest changes. Compiled on Debian Stable."
+        prerelease: true # Marks it as a pre-release so users know it's an automated build
+        allowUpdates: true # Overwrites the binary file inside the 'latest' release tag on every push
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
